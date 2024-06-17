@@ -1,146 +1,117 @@
 import os
-import openai
 import dotenv
-from autogen import config_list_from_json, UserProxyAgent, AssistantAgent, GroupChat, GroupChatManager
-from tools import extract_text_from_pdf, extract_text_from_docx, fetch_job_description, research, write_content
+import openai 
+from autogen import config_list_from_json
+from autogen.agentchat.assistant_agent import AssistantAgent  
+from autogen.agentchat.user_proxy_agent import UserProxyAgent 
+from autogen.agentchat.groupchat import GroupChat, GroupChatManager 
+from tools import research, write_content, extract_cv_text, fetch_job_description
 
 dotenv.load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# Load OpenAI configurations
 config_list = config_list_from_json(os.getenv("OAI_CONFIG_LIST"))
+llm_config = {"config_list": config_list, "temperature": 0}
 
-user_task = input("Please upload your CV file path (PDF or DOCX): ")
-job_link = input("Please enter the job advertisement link: ")
+def main():
+    """Main function to orchestrate the CV enhancer agents."""
 
-llm_config_content_assistant = {
-    "functions": [
-        {
-            "name": "research",
-            "description": "Conduct relevant research",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "The topic to be researched"}
-                },
-                "required": ["query"]
-            }
-        },
-        {
-            "name": "write_content",
-            "description": "Write content based on research",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "research_material": {"type": "string", "description": "Research material"},
-                    "topic": {"type": "string", "description": "Content topic"}
-                },
-                "required": ["research_material", "topic"]
-            }
-        }
-    ],
-    "config_list": config_list,
-    "timeout": 120
-}
+    # --- 1. Get User Input ---
+    cv_path = input("Enter the path to your CV file (PDF or DOCX): ")
+    job_ad_link = input("Enter the link to the job advertisement: ")
 
-def extract_cv_text(file_path):
-    file_ext = file_path.split('.')[-1].lower()
-    if file_ext == 'pdf':
-        return extract_text_from_pdf(file_path)
-    elif file_ext == 'docx':
-        return extract_text_from_docx(file_path)
-    else:
-        raise ValueError("Unsupported file format.")
+    # --- 2. Create User Input Agent ---
+    user_input_agent = UserInputAgent(
+        name="User Input Agent", 
+        llm_config=llm_config, 
+        cv_path=cv_path,
+        job_ad_link=job_ad_link,
+    )
+    
+    # Process user input and get initial CV content and job description
+    cv_content, job_description = user_input_agent.process_input()
 
-class UserInputAgent(UserProxyAgent):
-    def __init__(self, name, llm_config):
-        super().__init__(name=name, llm_config=llm_config)
+    # --- 3. Create the Other Agents ---
 
-    def handle_input(self, cv_path, job_link):
-        cv_text = extract_cv_text(cv_path)
-        job_description = fetch_job_description(job_link)
-        self.send(cv_text, receiver="CV_Analysis_Agent")
-        self.send(job_description, receiver="Job_Analysis_Agent")
+    # User Proxy Agent (for interacting with tools)
+    user_proxy = UserProxyAgent(
+        name="User Proxy", 
+        system_message="A proxy agent that can execute code and interact with tools.",
+        human_input_mode="TERMINATE", # Or "ALWAYS" for constant user interaction
+        code_execution_config={"work_dir": "coding"},  # Directory for code execution
+        function_map={"research": research, "write_content": write_content},
+    )
 
-class CVAnalysisAgent(AssistantAgent):
-    def __init__(self, name, llm_config):
-        super().__init__(name=name, llm_config=llm_config)
+    # CV Analysis Agent
+    cv_analysis_agent = CVAnalysisAgent(
+        name="CV Analysis Agent",
+        llm_config=llm_config, 
+        system_message="Analyzes the structure and content of the user's CV.",
+    )
 
-    def analyze_cv(self, cv_text):
-        # Implement CV analysis logic
-        pass
+    # Job Analysis Agent
+    job_analysis_agent = JobAnalysisAgent(
+        name="Job Analysis Agent",
+        llm_config=llm_config, 
+        system_message="Analyzes the requirements and keywords from a job description.",
+    )
 
-class JobAnalysisAgent(AssistantAgent):
-    def __init__(self, name, llm_config):
-        super().__init__(name=name, llm_config=llm_config)
+    # ATS Standards Agent
+    ats_standards_agent = ATSStandardsAgent(
+        name="ATS Standards Agent",
+        llm_config=llm_config, 
+        system_message="Provides guidelines and knowledge about Applicant Tracking Systems (ATS).",
+    )
 
-    def analyze_job_description(self, job_description):
-        # Implement job description analysis logic
-        pass
+    # CV Enhancement Agent (Central Orchestrator)
+    cv_enhancement_agent = CVEnhancementAgent(
+        name="CV Enhancement Agent",
+        llm_config=llm_config, 
+        system_message="Compares the CV with the job description and ATS guidelines to suggest enhancements.",
+        function_map={"research": research, "write_content": write_content}, # For potential tool usage
+    )
 
-class ATSStandardsAgent(AssistantAgent):
-    def __init__(self, name, llm_config):
-        super().__init__(name=name, llm_config=llm_config)
+    # User Output Agent
+    user_output_agent = UserOutputAgent(
+        name="User Output Agent",
+        llm_config=llm_config, 
+        system_message="Presents CV enhancement suggestions in a clear and user-friendly way.",
+    )
 
-    def provide_ats_guidelines(self):
-        # Implement ATS guidelines provision logic
-        pass
+    # --- 4. Register Functions for LLM/Tool Usage ---
 
-class CVEnhancementAgent(AssistantAgent):
-    def __init__(self, name, llm_config):
-        super().__init__(name=name, llm_config=llm_config)
+    autogen.register_function(
+        research, 
+        caller=cv_enhancement_agent, 
+        executor=user_proxy, 
+        name="research", 
+        description="Conducts research on given topics to gather relevant information." 
+    )
 
-    def generate_suggestions(self, analyzed_cv, analyzed_job, ats_guidelines):
-        # Implement CV enhancement suggestion logic
-        pass
+    autogen.register_function(
+        write_content, 
+        caller=cv_enhancement_agent, 
+        executor=user_proxy, 
+        name="write_content", 
+        description="Generates written content based on provided research and a topic."
+    )
 
-class UserOutputAgent(UserProxyAgent):
-    def __init__(self, name, llm_config):
-        super().__init__(name=name, llm_config=llm_config)
+    # --- 5. Set Up Group Chat ---
+    group_chat = GroupChat(
+        agents=[user_proxy, cv_analysis_agent, job_analysis_agent, 
+                ats_standards_agent, cv_enhancement_agent, user_output_agent], 
+        messages=[
+            {"role": "user", "content": cv_content},  # Add CV content as initial message
+            {"role": "user", "content": job_description}, # Add job description
+        ],
+        max_round=50 
+    )
 
-    def display_suggestions(self, suggestions):
-        # Implement logic to present suggestions to the user
-        pass
+    manager = GroupChatManager(groupchat=group_chat, llm_config=llm_config)
 
-user_input_agent = UserInputAgent(
-    name="User_Input_Agent",
-    llm_config={"config_list": config_list}
-)
+    # --- 6. Initiate Chat ---
+    user_input_agent.initiate_chat(manager, message="Start CV enhancement process.")
 
-cv_analysis_agent = CVAnalysisAgent(
-    name="CV_Analysis_Agent",
-    llm_config={"config_list": config_list}
-)
-
-job_analysis_agent = JobAnalysisAgent(
-    name="Job_Analysis_Agent",
-    llm_config={"config_list": config_list}
-)
-
-ats_standards_agent = ATSStandardsAgent(
-    name="ATS_Standards_Agent",
-    llm_config={"config_list": config_list}
-)
-
-cv_enhancement_agent = CVEnhancementAgent(
-    name="CV_Enhancement_Agent",
-    llm_config={"config_list": config_list}
-)
-
-user_output_agent = UserOutputAgent(
-    name="User_Output_Agent",
-    llm_config={"config_list": config_list}
-)
-
-groupchat = GroupChat(
-    agents=[
-        user_input_agent, cv_analysis_agent, job_analysis_agent,
-        ats_standards_agent, cv_enhancement_agent, user_output_agent
-    ],
-    messages=[], max_round=20
-)
-
-manager = GroupChatManager(groupchat=groupchat, llm_config={"config_list": config_list})
-
-user_input_agent.initiate_chat(
-    manager,
-    message={"cv_path": user_task, "job_link": job_link}
-)
+if __name__ == "__main__":
+    main()
