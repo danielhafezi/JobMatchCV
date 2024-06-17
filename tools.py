@@ -12,6 +12,8 @@ from langchain.chat_models import ChatOpenAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
 from langchain.prompts import PromptTemplate 
+from utils.pdf_extractor import extract_text_from_pdf
+from utils.docx_extractor import extract_text_from_docx
 
 # Load environment variables
 openai.api_key = os.getenv("OPENAI_API_KEY")
