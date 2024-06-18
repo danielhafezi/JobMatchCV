@@ -1,11 +1,11 @@
 import os
 import dotenv
-import openai 
+import openai
 from autogen import config_list_from_json
-from autogen.agentchat.assistant_agent import AssistantAgent  
-from autogen.agentchat.user_proxy_agent import UserProxyAgent 
-from autogen.agentchat.groupchat import GroupChat, GroupChatManager 
-from tools import research, write_content, extract_cv_text, fetch_job_description
+from autogen.agentchat.assistant_agent import AssistantAgent
+from autogen.agentchat.user_proxy_agent import UserProxyAgent
+from autogen.agentchat.groupchat import GroupChat, GroupChatManager
+from tools import extract_cv_text, fetch_job_description
 
 dotenv.load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -39,7 +39,7 @@ def main():
         system_message="You are a proxy agent that can execute code and interact with tools. Your role is to facilitate the execution of specific tasks by leveraging external tools and services. You will call appropriate functions as requested by other agents. Reply 'TERMINATE' when everything is done.",
         human_input_mode="TERMINATE",  # Or "ALWAYS" for constant user interaction
         code_execution_config={"work_dir": "coding"},  # Directory for code execution
-        function_map={"research": research, "write_content": write_content},
+        function_map={},  # No specific functions to map now
     )
 
     # CV Analysis Agent
@@ -68,7 +68,7 @@ def main():
         name="CV Enhancement Agent",
         llm_config=llm_config,
         system_message="You are a CV Enhancement Agent. Your task is to compare the CV content with the job requirements and ATS guidelines, identify areas for improvement, and generate specific suggestions for modifications. Ensure your suggestions are clear and actionable. Reply 'TERMINATE' when everything is done.",
-        function_map={"research": research, "write_content": write_content},
+        function_map={},  # No specific functions to map now
     )
 
     # User Output Agent
@@ -79,21 +79,22 @@ def main():
     )
 
     # --- 4. Register Functions for LLM/Tool Usage ---
-    autogen.register_function(
-        research,
-        caller=cv_enhancement_agent,
-        executor=user_proxy,
-        name="research",
-        description="Conducts research on given topics to gather relevant information." 
-    )
+    # Since we no longer need these functions, we can remove their registration
+    # autogen.register_function(
+    #     research,
+    #     caller=cv_enhancement_agent,
+    #     executor=user_proxy,
+    #     name="research",
+    #     description="Conducts research on given topics to gather relevant information."
+    # )
 
-    autogen.register_function(
-        write_content,
-        caller=cv_enhancement_agent,
-        executor=user_proxy,
-        name="write_content",
-        description="Generates written content based on provided research and a topic."
-    )
+    # autogen.register_function(
+    #     write_content,
+    #     caller=cv_enhancement_agent,
+    #     executor=user_proxy,
+    #     name="write_content",
+    #     description="Generates written content based on provided research and a topic."
+    # )
 
     # --- 5. Set Up Group Chat ---
     group_chat = GroupChat(
