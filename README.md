@@ -36,7 +36,7 @@ JobMatchCV employs a sophisticated multi-agent system to analyze, enhance, and f
    - Upload your CV (PDF or DOCX)
    - Provide the job advertisement link
    - Initiate the CV enhancement process
-3. Retrieve your optimized CV as a markdown file (`resume.md`)
+3. Retrieve your optimized CV as a markdown file (`cv.md`)
 
 ## Customization
 JobMatchCV offers flexibility in model selection:
