@@ -1,40 +1,52 @@
-# Multi-Agent CV Enhancer Project
+# JobMatchCV: AI-Powered Resume Optimizer
 
-This project utilizes the AutoGen framework to create a multi-agent system for enhancing CVs based on job advertisements.
+JobMatchCV is an innovative multi-agent system that leverages the AutoGen framework to enhance CVs based on specific job advertisements, providing a tailored markdown output.
 
 ## Table of Contents
 - [Overview](#overview)
+- [Key Features](#key-features)
+- [Installation](#installation)
 - [Usage](#usage)
 - [Customization](#customization)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Overview
-This Multi-Agent CV Enhancer involves the following agents:
-- **User Input Agent**: Receives user input (CV and job advertisement link) and extracts text content.
-- **CV Analysis Agent**: Analyzes the structure, content, and formatting of the user's CV.
-- **Job Analysis Agent**: Analyzes the job requirements, qualifications, and desired skills.
-- **ATS Standards Agent**: Provides knowledge and guidelines on Applicant Tracking System (ATS) standards.
-- **CV Enhancement Agent**: Compares the CV content with the job requirements, identifies areas for improvement, and generates suggestions for modifications.
-- **User Output Agent**: Presents the CV enhancement suggestions to the user in a clear and organized manner.
+JobMatchCV employs a sophisticated multi-agent system to analyze, enhance, and format CVs:
 
+- **User Input Agent**: Manages initial input and text extraction from CVs and job ads.
+- **CV Analysis Agent**: Examines CV structure, content, and formatting.
+- **Job Analysis Agent**: Dissects job requirements and desired qualifications.
+- **ATS Standards Agent**: Provides expertise on Applicant Tracking System standards.
+- **CV Enhancement Agent**: Generates improvement suggestions based on job-CV comparison.
+- **User Output Agent**: Presents enhancement suggestions clearly and actionably.
+- **Markdown Conversion Agent**: Transforms the enhanced CV into a professional markdown document.
+
+## Key Features
+- Multi-agent collaboration for comprehensive CV optimization
+- Support for PDF and DOCX input formats
+- Web scraping for job description extraction
+- ATS-compliant enhancement suggestions
+- Automatic conversion to markdown format
+- Final output saved as `cv.md`
 ## Usage
-To use this project, follow the steps outlined in the `CV_Enhancer.ipynb` Jupyter notebook. This notebook will guide you through the following steps:
-1. **Step 1**: Install dependencies.
-2. **Step 2**: Load environment variables.
-3. **Step 3 to 5**: Initialize necessary configurations and agents.
-4. **Step 6**: Upload your CV and provide the job advertisement link.
-5. **Step 7**: Set up the group chat and initiate the CV enhancement process.
+1. Open the `JobMatchCV.ipynb` Jupyter notebook.
+2. Follow the step-by-step instructions to:
+   - Set up your environment and API keys
+   - Upload your CV (PDF or DOCX)
+   - Provide the job advertisement link
+   - Initiate the CV enhancement process
+3. Retrieve your optimized CV as a markdown file (`resume.md`)
 
 ## Customization
-You can customize the agent configurations based on your preferences and available API keys. The default setup uses:
-- **GPT-4o** for receiving input and analyzing the CV and job descriptions.
-- **Claude 3.5 Sonnet** for editing and improving the CV content.
+JobMatchCV offers flexibility in model selection:
+- Default: GPT-4 for analysis, Claude 3.5 Sonnet for enhancements
+- Alternative options: Gemini, Mistral, and Codestral
 
-Feel free to experiment with other models like Gemini, and Mistral provided in the setup.
+Adjust the `llm_config` settings in the notebook to experiment with different models.
 
 ## Contributing
-Contributions to this project are welcome! If you have suggestions for improvements or new features, please submit an issue or a pull request.
+We welcome contributions! For suggestions or new features, please open an issue or submit a pull request.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
